@@ -28,9 +28,7 @@ except ImportError:
 import mimetypes
 from comfy.cli_args import args
 import comfy.utils
-import comfy.model_management
 
-from app.user_manager import UserManager
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
@@ -73,7 +71,6 @@ class PromptServer():
         mimetypes.init()
         mimetypes.types_map['.js'] = 'application/javascript; charset=utf-8'
 
-        self.user_manager = UserManager()
         self.supports = ["custom_nodes_from_web"]
         self.prompt_queue = None
         self.loop = loop
@@ -364,10 +361,10 @@ class PromptServer():
 
         @routes.get("/system_stats")
         async def get_queue(request):
-            device = comfy.model_management.get_torch_device()
-            device_name = comfy.model_management.get_torch_device_name(device)
-            vram_total, torch_vram_total = comfy.model_management.get_total_memory(device, torch_total_too=True)
-            vram_free, torch_vram_free = comfy.model_management.get_free_memory(device, torch_free_too=True)
+            # device = comfy.model_management.get_torch_device()
+            # device_name = comfy.model_management.get_torch_device_name(device)
+            # vram_total, torch_vram_total = comfy.model_management.get_total_memory(device, torch_total_too=True)
+            # vram_free, torch_vram_free = comfy.model_management.get_free_memory(device, torch_free_too=True)
             system_stats = {
                 "system": {
                     "os": os.name,
@@ -376,13 +373,13 @@ class PromptServer():
                 },
                 "devices": [
                     {
-                        "name": device_name,
-                        "type": device.type,
-                        "index": device.index,
-                        "vram_total": vram_total,
-                        "vram_free": vram_free,
-                        "torch_vram_total": torch_vram_total,
-                        "torch_vram_free": torch_vram_free,
+                        # "name": device_name,
+                        # "type": device.type,
+                        # "index": device.index,
+                        # "vram_total": vram_total,
+                        # "vram_free": vram_free,
+                        # "torch_vram_total": torch_vram_total,
+                        # "torch_vram_free": torch_vram_free,
                     }
                 ]
             }
@@ -509,17 +506,6 @@ class PromptServer():
             nodes.interrupt_processing()
             return web.Response(status=200)
 
-        @routes.post("/free")
-        async def post_free(request):
-            json_data = await request.json()
-            unload_models = json_data.get("unload_models", False)
-            free_memory = json_data.get("free_memory", False)
-            if unload_models:
-                self.prompt_queue.set_flag("unload_models", unload_models)
-            if free_memory:
-                self.prompt_queue.set_flag("free_memory", free_memory)
-            return web.Response(status=200)
-
         @routes.post("/history")
         async def post_history(request):
             json_data =  await request.json()
@@ -534,7 +520,6 @@ class PromptServer():
             return web.Response(status=200)
         
     def add_routes(self):
-        self.user_manager.add_routes(self.routes)
         self.app.add_routes(self.routes)
 
         for name, dir in nodes.EXTENSION_WEB_DIRS.items():
