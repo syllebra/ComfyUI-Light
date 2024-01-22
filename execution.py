@@ -212,7 +212,7 @@ def recursive_will_execute(prompt, outputs, current_item):
 
     return will_execute + [unique_id]
 
-def recursive_output_delete_if_changed(prompt, old_prompt, outputs, current_item):
+def recursive_output_delete_if_changed(prompt, old_prompt, outputs, current_item, force_rerun = False):
     unique_id = current_item
     inputs = prompt[unique_id]['inputs']
     class_type = prompt[unique_id]['class_type']
@@ -221,21 +221,25 @@ def recursive_output_delete_if_changed(prompt, old_prompt, outputs, current_item
     is_changed_old = ''
     is_changed = ''
     to_delete = False
-    if hasattr(class_def, 'IS_CHANGED'):
-        if unique_id in old_prompt and 'is_changed' in old_prompt[unique_id]:
-            is_changed_old = old_prompt[unique_id]['is_changed']
-        if 'is_changed' not in prompt[unique_id]:
-            input_data_all = get_input_data(inputs, class_def, unique_id, outputs)
-            if input_data_all is not None:
-                try:
-                    #is_changed = class_def.IS_CHANGED(**input_data_all)
-                    is_changed = map_node_over_list(class_def, input_data_all, "IS_CHANGED")
-                    prompt[unique_id]['is_changed'] = is_changed
-                except:
-                    to_delete = True
-        else:
-            is_changed = prompt[unique_id]['is_changed']
-
+    if(force_rerun):
+        to_delete = True
+    else:
+        if hasattr(class_def, 'IS_CHANGED'):
+            if unique_id in old_prompt and 'is_changed' in old_prompt[unique_id]:
+                is_changed_old = old_prompt[unique_id]['is_changed']
+            if 'is_changed' not in prompt[unique_id]:
+                input_data_all = get_input_data(inputs, class_def, unique_id, outputs)
+                if input_data_all is not None:
+                    try:
+                        #is_changed = class_def.IS_CHANGED(**input_data_all)
+                        is_changed = map_node_over_list(class_def, input_data_all, "IS_CHANGED")
+                        prompt[unique_id]['is_changed'] = is_changed
+                    except:
+                        to_delete = True
+            else:
+                is_changed = prompt[unique_id]['is_changed']
+    
+    
     if unique_id not in outputs:
         return True
 
@@ -266,12 +270,13 @@ def recursive_output_delete_if_changed(prompt, old_prompt, outputs, current_item
     return to_delete
 
 class PromptExecutor:
-    def __init__(self, server):
+    def __init__(self, server, force_rerun):
         self.outputs = {}
         self.object_storage = {}
         self.outputs_ui = {}
         self.old_prompt = {}
         self.server = server
+        self.force_rerun = force_rerun
 
     def handle_execution_error(self, prompt_id, prompt, current_outputs, executed, error, ex):
         node_id = error["node_id"]
@@ -349,7 +354,7 @@ class PromptExecutor:
                 del d
 
             for x in prompt:
-                recursive_output_delete_if_changed(prompt, self.old_prompt, self.outputs, x)
+                recursive_output_delete_if_changed(prompt, self.old_prompt, self.outputs, x, self.force_rerun)
 
             current_outputs = set(self.outputs.keys())
             for x in list(self.outputs_ui.keys()):

@@ -1,6 +1,8 @@
 import comfy.options
-import comfy.model_management
 comfy.options.enable_args_parsing()
+
+import comfy.model_management
+
 
 import os
 import importlib.util
@@ -65,8 +67,8 @@ if __name__ == "__main__":
     from server import BinaryEventTypes
     from nodes import init_custom_nodes
 
-    def prompt_worker(q, server):
-        e = execution.PromptExecutor(server)
+    def prompt_worker(q, server, force_rerun):
+        e = execution.PromptExecutor(server, force_rerun)
         last_gc_collect = 0
         need_gc = False
         gc_collect_interval = 10.0
@@ -168,17 +170,12 @@ if __name__ == "__main__":
         server.add_routes()
         hijack_progress(server)
 
-        threading.Thread(target=prompt_worker, daemon=True, args=(q, server,)).start()
+        threading.Thread(target=prompt_worker, daemon=True, args=(q, server,not args.no_force_rerun)).start()
 
         if args.output_directory:
             output_dir = os.path.abspath(args.output_directory)
             print(f"Setting output directory to: {output_dir}")
             folder_paths.set_output_directory(output_dir)
-
-        #These are the default folders that checkpoints, clip and vae models will be saved to when using CheckpointSave, etc.. nodes
-        folder_paths.add_model_folder_path("checkpoints", os.path.join(folder_paths.get_output_directory(), "checkpoints"))
-        folder_paths.add_model_folder_path("clip", os.path.join(folder_paths.get_output_directory(), "clip"))
-        folder_paths.add_model_folder_path("vae", os.path.join(folder_paths.get_output_directory(), "vae"))
 
         if args.input_directory:
             input_dir = os.path.abspath(args.input_directory)
