@@ -51,6 +51,7 @@ parser.add_argument("--windows-standalone-build", action="store_true", help="Win
 
 parser.add_argument("--disable-metadata", action="store_true", help="Disable saving prompt metadata in files.")
 
+parser.add_argument("--multi-user", action="store_true", help="Enables per-user storage.")
 parser.add_argument("--no-force-rerun", action="store_true", help="If not set, the whole graph will be forces to rerun each time beeing queued (intelligent rerun disabled).")
 
 if comfy.options.args_parsing:
