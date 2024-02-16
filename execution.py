@@ -399,8 +399,6 @@ class PromptExecutor:
             for x in executed:
                 self.old_prompt[x] = copy.deepcopy(prompt[x])
             self.server.last_node_id = None
-            if comfy.model_management.DISABLE_SMART_MEMORY:
-                comfy.model_management.unload_all_models()
 
 
 def validate_inputs(prompt, item, validated):
